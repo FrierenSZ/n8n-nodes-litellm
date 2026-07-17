@@ -1,0 +1,65 @@
+{
+  "name": "@frierensz_/n8n-nodes-litellm",
+  "version": "0.1.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "description": "n8n community node for LiteLLM (OpenAI-compatible proxy) with dynamic model list and automatic DeepSeek reasoning support",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "litellm",
+    "proxy",
+    "ai",
+    "llm",
+    "deepseek",
+    "reasoning"
+  ],
+  "license": "MIT",
+  "author": {
+    "name": "Hipólito"
+  },
+  "homepage": "https://github.com/FrierenSZ_/n8n-nodes-litellm",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FrierenSZ_/n8n-nodes-litellm.git"
+  },
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc && gulp build:icons",
+    "dev": "tsc --watch",
+    "format": "prettier nodes credentials --write",
+    "lint": "eslint nodes credentials package.json",
+    "lintfix": "eslint nodes credentials package.json --fix",
+    "prepublishOnly": "npm run build"
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/LiteLlmApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/LiteLlm/LiteLlm.node.js",
+      "dist/nodes/LmChatLiteLlm/LmChatLiteLlm.node.js"
+    ]
+  },
+  "dependencies": {
+    "@langchain/core": "^0.3.0",
+    "@langchain/openai": "^0.3.0"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "devDependencies": {
+    "@typescript-eslint/parser": "^7.15.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-n8n-nodes-base": "^1.16.0",
+    "gulp": "^5.0.0",
+    "n8n-workflow": "^1.50.0",
+    "prettier": "^3.3.0",
+    "typescript": "^5.5.0"
+  }
+}
