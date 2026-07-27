@@ -52,6 +52,29 @@ the prompt.
 **Not available:** File Search stores — that is a Gemini-specific API with no OpenAI-compatible
 equivalent on the proxy.
 
+## Model list
+
+The **Model** dropdown is loaded from your proxy's `/models`.
+
+The two sub-nodes will filter it by kind — Chat Model shows chat models, Embeddings shows embedding
+models — **if** your key can read `/model_group/info` or `/model/info`, where LiteLLM reports each
+model's `mode`.
+
+> **Most keys cannot.** Those are admin routes: a virtual key scoped to `llm_api_routes` (the right
+> way to key n8n) gets back
+> `403 Virtual key is not allowed to call this route`.
+> When that happens the node simply lists every model, exactly as if there were no filter — it
+> never fails. Filtering is a convenience, not a requirement, and it is not worth widening your
+> key's permissions for.
+
+Two more things worth knowing when filtering *is* active:
+
+- LiteLLM only knows the mode of models in its cost map, so custom aliases and self-hosted models
+  report `mode: null`. Those are **kept**, never hidden.
+- **Show All Models** turns the filter off for that node.
+
+The LiteLLM action node is never filtered, since the right kind depends on the action you picked.
+
 ## Install
 
 In n8n: **Settings → Community Nodes → Install** → `@frierensz_/n8n-nodes-litellm`.

@@ -7,7 +7,7 @@ import {
 	type SupplyData,
 } from 'n8n-workflow';
 import { TracedEmbeddings } from './TracedEmbeddings';
-import { getModels } from '../shared/loadModels';
+import { getModelsFor } from '../shared/loadModels';
 
 export class EmbeddingsLiteLlm implements INodeType {
 	description: INodeTypeDescription = {
@@ -34,11 +34,22 @@ export class EmbeddingsLiteLlm implements INodeType {
 				displayName: 'Model Name or ID',
 				name: 'model',
 				type: 'options',
-				typeOptions: { loadOptionsMethod: 'getModels' },
+				typeOptions: {
+					loadOptionsMethod: 'getModels',
+					loadOptionsDependsOn: ['showAllModels'],
+				},
 				default: '',
 				required: true,
 				description:
-					'Model list is loaded from your LiteLLM proxy. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					'Embedding models on your LiteLLM proxy. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Show All Models',
+				name: 'showAllModels',
+				type: 'boolean',
+				default: false,
+				description:
+					'Whether to list every model on the proxy instead of only the embedding ones. Turn on if your model is missing — LiteLLM cannot report a mode for custom or self-hosted models.',
 			},
 			{
 				displayName: 'Options',
@@ -89,7 +100,7 @@ export class EmbeddingsLiteLlm implements INodeType {
 	};
 
 	methods = {
-		loadOptions: { getModels },
+		loadOptions: { getModels: getModelsFor('embedding') },
 	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
