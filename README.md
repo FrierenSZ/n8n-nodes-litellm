@@ -11,11 +11,41 @@ OpenAI-compatible chat model.
 
 ## Nodes
 
-- **LiteLLM** — action node. Send messages to any model served by your LiteLLM proxy, with
-  reasoning (DeepSeek only), tools (function calling) and JSON output. Output splits `content`,
-  `reasoning_content` and `tool_calls`.
+- **LiteLLM** — action node. See the actions below.
 - **LiteLLM Chat Model** — sub-node for the **AI Agent**. Plug it into an Agent to use any model
   behind your LiteLLM proxy as the reasoning brain, with tool calling.
+
+## Actions
+
+| Resource | Action | Endpoint |
+|----------|--------|----------|
+| Text | Message a model | `/chat/completions` |
+| Image | Analyze an image | `/chat/completions` (`image_url`) |
+| Image | Generate an image | `/images/generations` |
+| Audio | Analyze audio | `/chat/completions` (`input_audio`) |
+| Audio | Transcribe a recording | `/audio/transcriptions` |
+| Document | Analyze a document | `/chat/completions` (`file`) |
+| Video | Analyze a video | `/chat/completions` (`video_url`) |
+| Video | Generate a video | `/videos` |
+
+The analyze actions take either a **binary field** from a previous node (default `data`) or a
+**URL**. Whether a given model can actually read an image/audio/video/PDF depends on the model you
+route to in LiteLLM — Gemini and GPT-4o handle all of them, most text-only models handle none.
+
+Chat actions split `content`, `reasoning_content` and `tool_calls` in the output, and support tools
+(function calling) and JSON mode.
+
+**Generating video** takes minutes — LiteLLM returns a job ID and the node polls until it is done,
+then hands you the mp4 as a binary field. Raise **Max Wait (Minutes)** (default 10) if your model
+needs longer. Works with `sora-2` (OpenAI) and `veo-3` (Gemini).
+
+**Note on transcription:** *Transcribe a Recording* uses the Whisper-style `/audio/transcriptions`
+endpoint, which only a few providers implement (OpenAI, Azure, Groq, Deepgram, Fireworks). Gemini
+has no such endpoint — to transcribe with Gemini, use **Analyze Audio** and ask for a transcript in
+the prompt.
+
+**Not available:** File Search stores — that is a Gemini-specific API with no OpenAI-compatible
+equivalent on the proxy.
 
 ## Install
 
@@ -38,6 +68,7 @@ params.
 ```bash
 npm install
 npm run build
+npm test        # asserts the multimodal content-part shapes
 ```
 
 Point n8n at the built package with `N8N_CUSTOM_EXTENSIONS=/path/to/n8n-nodes-litellm`, or
