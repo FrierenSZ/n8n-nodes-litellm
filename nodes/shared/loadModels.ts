@@ -132,13 +132,17 @@ export function parseModelInfo(response: IDataObject): Map<string, IDataObject> 
  * Keeps models that meet the requirement, plus any the proxy told us nothing about.
  * LiteLLM knows nothing about models missing from its cost map (custom aliases,
  * self-hosted), and hiding those would drop models that work fine.
+ *
+ * An empty result is a real answer — "no model here does that" — not a failure to
+ * report. Callers skip this entirely when capabilities are unreadable, so nothing
+ * lands here without data to judge on.
  */
 export function filterModels(
 	ids: string[],
 	infos: Map<string, IDataObject>,
 	requirement: ModelRequirement,
 ): string[] {
-	const matching = ids.filter((id) => {
+	return ids.filter((id) => {
 		const info = infos.get(id);
 		if (info?.mode == null) return true;
 		if (requirement.mode && info.mode !== requirement.mode) return false;
@@ -150,8 +154,6 @@ export function filterModels(
 		const flags = requirement.supports.map((flag) => info[flag]);
 		return flags.some((v) => v === true) || flags.every((v) => v == null);
 	});
-	// Never hand back an empty dropdown — that reads as "broken", not "filtered".
-	return matching.length ? matching : ids;
 }
 
 async function loadModels(

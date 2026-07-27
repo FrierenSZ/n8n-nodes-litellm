@@ -113,8 +113,8 @@ assert.deepStrictEqual(filterModels(ids, infos, { mode: 'embedding' }), ['embed'
 assert.deepStrictEqual(filterModels(ids, new Map(), REQ['image:analyze']), ids);
 // no model here generates video, so only the ones the proxy can't classify remain
 assert.deepStrictEqual(filterModels(ids, infos, { mode: 'video_generation' }), ['unlisted']);
-// and when even those are gone, fall back to everything rather than an empty dropdown
-assert.deepStrictEqual(filterModels(['gpt'], infos, { mode: 'video_generation' }), ['gpt']);
+// "nothing here does that" is an honest empty list, not a reason to show everything
+assert.deepStrictEqual(filterModels(['gpt'], infos, { mode: 'video_generation' }), []);
 
 // --- DeepSeek detection -------------------------------------------------
 
