@@ -45,7 +45,8 @@
     ],
     "nodes": [
       "dist/nodes/LiteLlm/LiteLlm.node.js",
-      "dist/nodes/LmChatLiteLlm/LmChatLiteLlm.node.js"
+      "dist/nodes/LmChatLiteLlm/LmChatLiteLlm.node.js",
+      "dist/nodes/EmbeddingsLiteLlm/EmbeddingsLiteLlm.node.js"
     ]
   },
   "dependencies": {

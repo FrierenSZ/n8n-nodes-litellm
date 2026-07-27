@@ -14,6 +14,11 @@ OpenAI-compatible chat model.
 - **LiteLLM** — action node. See the actions below.
 - **LiteLLM Chat Model** — sub-node for the **AI Agent**. Plug it into an Agent to use any model
   behind your LiteLLM proxy as the reasoning brain, with tool calling.
+- **LiteLLM Embeddings** — sub-node for **vector stores** (Qdrant, PGVector, Pinecone, ...). Set
+  **Dimensions** to control the output vector size: LiteLLM maps it to Gemini's
+  `outputDimensionality` and Vertex's `output_dimensionality`, so `gemini-embedding-001` at 768
+  works the same way `text-embedding-3-large` at 1024 does. Leave it unset for models that don't
+  support resizing.
 
 ## Actions
 
