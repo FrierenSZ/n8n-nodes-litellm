@@ -51,6 +51,28 @@ async function fetchVideo(
 	};
 }
 
+/**
+ * Turns a provider's "I don't accept that content block" 400 into an actionable
+ * message. The model list can't prevent this: LiteLLM reports
+ * `supports_audio_input: null` both for models that do accept audio (Gemini) and
+ * for models that don't (gpt-4.1-mini), so neither can be filtered out up front.
+ */
+function explainMediaRejection(ctx: IExecuteFunctions, i: number, error: unknown): unknown {
+	const message = (error as JsonObject)?.message;
+	const detail = typeof message === 'string' ? message : JSON.stringify(message ?? '');
+	if (!/content blocks|image_url|input_audio|invalid.*messages/i.test(detail)) return error;
+
+	return new NodeOperationError(
+		ctx.getNode(),
+		'This model rejected the file you sent — it cannot read that kind of input.',
+		{
+			itemIndex: i,
+			description:
+				'Pick a model that accepts this media type (Gemini handles image, audio, video and PDF; OpenAI GPT models take images and PDFs, but only the gpt-4o-audio line takes audio). The dropdown cannot filter these out because LiteLLM reports no audio/video capability for either kind of model.',
+		},
+	);
+}
+
 /** Reads the file the user pointed at and turns it into a chat content part. */
 async function buildMediaPart(
 	ctx: IExecuteFunctions,
@@ -174,11 +196,22 @@ export class LiteLlm implements INodeType {
 				displayName: 'Model Name or ID',
 				name: 'model',
 				type: 'options',
-				typeOptions: { loadOptionsMethod: 'getModels' },
+				typeOptions: {
+					loadOptionsMethod: 'getModels',
+					loadOptionsDependsOn: ['resource', 'operation', 'showAllModels'],
+				},
 				default: '',
 				required: true,
 				description:
-					'Model list is loaded from your LiteLLM proxy. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+					'Models on your proxy that suit the chosen action. Choose from the list, or specify an ID using an <a href="https://docs.n8n.io/code/expressions/">expression</a>.',
+			},
+			{
+				displayName: 'Show All Models',
+				name: 'showAllModels',
+				type: 'boolean',
+				default: false,
+				description:
+					'Whether to list every model on the proxy instead of only those suited to this action. Turn on if your model is missing.',
 			},
 			{
 				displayName: 'Messages',
@@ -695,7 +728,7 @@ export class LiteLlm implements INodeType {
 					});
 					continue;
 				}
-				throw error;
+				throw explainMediaRejection(this, i, error);
 			}
 		}
 

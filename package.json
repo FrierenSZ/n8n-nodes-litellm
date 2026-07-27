@@ -1,6 +1,6 @@
 {
   "name": "@frierensz_/n8n-nodes-litellm",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "publishConfig": {
     "access": "public"
   },

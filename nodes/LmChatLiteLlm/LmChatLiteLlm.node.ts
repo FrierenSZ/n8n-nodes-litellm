@@ -131,7 +131,7 @@ export class LmChatLiteLlm implements INodeType {
 	};
 
 	methods = {
-		loadOptions: { getModels: getModelsFor('chat') },
+		loadOptions: { getModels: getModelsFor({ mode: 'chat' }) },
 	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {

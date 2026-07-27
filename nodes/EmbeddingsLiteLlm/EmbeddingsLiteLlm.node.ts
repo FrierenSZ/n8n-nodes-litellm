@@ -100,7 +100,7 @@ export class EmbeddingsLiteLlm implements INodeType {
 	};
 
 	methods = {
-		loadOptions: { getModels: getModelsFor('embedding') },
+		loadOptions: { getModels: getModelsFor({ mode: 'embedding' }) },
 	};
 
 	async supplyData(this: ISupplyDataFunctions, itemIndex: number): Promise<SupplyData> {
