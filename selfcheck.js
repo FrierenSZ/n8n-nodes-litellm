@@ -116,6 +116,35 @@ assert.deepStrictEqual(filterModels(ids, infos, { mode: 'video_generation' }), [
 // "nothing here does that" is an honest empty list, not a reason to show everything
 assert.deepStrictEqual(filterModels(['gpt'], infos, { mode: 'video_generation' }), []);
 
+// --- ChatLiteLlm: usage capture + reasoning round-trip ------------------
+
+// Drive completionWithRetry with a stubbed transport, so both behaviours are
+// checked without touching a proxy.
+const { ChatLiteLlm } = require('./dist/nodes/LmChatLiteLlm/ChatLiteLlm');
+const parent = Object.getPrototypeOf(ChatLiteLlm.prototype);
+const sent = [];
+parent.completionWithRetry = async function (request) {
+	sent.push(JSON.parse(JSON.stringify(request)));
+	return {
+		usage: {
+			prompt_tokens: 19964,
+			completion_tokens: 249,
+			total_tokens: 20213,
+			prompt_tokens_details: { cached_tokens: 15000 },
+		},
+		choices: [
+			{
+				message: {
+					role: 'assistant',
+					content: '',
+					reasoning_content: 'pensando...',
+					tool_calls: [{ id: 'call_1' }],
+				},
+			},
+		],
+	};
+};
+
 // --- DeepSeek detection -------------------------------------------------
 
 // reasoning round-trip must trigger on LiteLLM aliases, not just bare names
@@ -123,4 +152,32 @@ assert.ok(isDeepSeekModel('deepseek-v4-flash'));
 assert.ok(isDeepSeekModel('deepseek/deepseek-v4-flash'));
 assert.ok(!isDeepSeekModel('gemini-2.5-flash-lite'));
 
-console.log('selfcheck ok');
+// completionWithRetry is async and this file is CommonJS, so the last checks run
+// in an IIFE rather than at top level.
+(async () => {
+	const llm = new ChatLiteLlm({ openAIApiKey: 'x', model: 'deepseek-v4-flash' });
+
+	// usage is captured even with reasoning off — it is what surfaces cached_tokens
+	llm.echoReasoning = false;
+	await llm.completionWithRetry({ messages: [] });
+	assert.strictEqual(llm.lastUsage.prompt_tokens_details.cached_tokens, 15000);
+
+	// with reasoning on, the captured reasoning_content is echoed back next request
+	llm.echoReasoning = true;
+	await llm.completionWithRetry({ messages: [] });
+	await llm.completionWithRetry({
+		messages: [{ role: 'assistant', content: '', tool_calls: [{ id: 'call_1' }] }],
+	});
+	assert.strictEqual(sent.at(-1).messages[0].reasoning_content, 'pensando...');
+
+	// an assistant turn with nothing captured still gets the field, or DeepSeek 400s
+	await llm.completionWithRetry({ messages: [{ role: 'assistant', content: 'novo' }] });
+	assert.strictEqual(sent.at(-1).messages[0].reasoning_content, '');
+
+	// with reasoning off the request must go out untouched
+	llm.echoReasoning = false;
+	await llm.completionWithRetry({ messages: [{ role: 'assistant', content: 'intacto' }] });
+	assert.strictEqual(sent.at(-1).messages[0].reasoning_content, undefined);
+
+	console.log('selfcheck ok');
+})();

@@ -153,10 +153,11 @@ export class LmChatLiteLlm implements INodeType {
 		if (options.reasoningEffort) modelKwargs.reasoning_effort = options.reasoningEffort;
 		else if (useReasoning) modelKwargs.reasoning_effort = 'high';
 
+		const tracing = new N8nLlmTracing(this);
 		const llm = new ChatLiteLlm({
 			openAIApiKey: credentials.apiKey as string,
 			model,
-			callbacks: [new N8nLlmTracing(this)],
+			callbacks: [tracing],
 			// Some LiteLLM-routed models (e.g. DeepSeek) reject OpenAI-style strict tool
 			// schemas with a 400, which makes the agent retry forever. The official n8n
 			// OpenAI node disables strict for the same reason.
@@ -176,6 +177,8 @@ export class LmChatLiteLlm implements INodeType {
 		// Only do the DeepSeek reasoning_content round-trip for DeepSeek models with
 		// thinking mode on. Any other model behind the proxy behaves as plain ChatOpenAI.
 		llm.echoReasoning = useReasoning;
+		// Lets the tracing report cache/reasoning token counts, which LangChain drops.
+		tracing.usageSource = llm;
 
 		return { response: llm };
 	}

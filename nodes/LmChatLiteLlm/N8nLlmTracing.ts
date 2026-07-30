@@ -15,6 +15,13 @@ export class N8nLlmTracing extends BaseCallbackHandler {
 	// run the handlers to completion so addOutputData finishes before the node returns
 	awaitHandlers = true;
 
+	/**
+	 * Set by the node to the model itself. LangChain hands callbacks a usage object
+	 * already reduced to three totals, so the cache and reasoning token breakdowns
+	 * are read from the model's captured raw response instead.
+	 */
+	usageSource?: { lastUsage?: Record<string, unknown> };
+
 	private runIndexByRunId = new Map<string, number>();
 
 	constructor(private readonly ctx: ISupplyDataFunctions) {
@@ -45,7 +52,18 @@ export class N8nLlmTracing extends BaseCallbackHandler {
 			);
 
 			this.ctx.addOutputData(NodeConnectionTypes.AiLanguageModel, index, [
-				[{ json: { generations, tokenUsage: tokenUsage ?? null } }],
+				[
+					{
+						json: {
+							generations,
+							tokenUsage: tokenUsage ?? null,
+							// The provider's own usage object: prompt_tokens_details.cached_tokens
+							// (OpenAI/Gemini), cache_read_input_tokens (Anthropic), and the
+							// reasoning token counts.
+							usage: this.usageSource?.lastUsage ?? null,
+						},
+					},
+				],
 			]);
 		} catch {
 			// tracing must never break the model call
