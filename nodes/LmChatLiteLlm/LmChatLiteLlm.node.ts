@@ -100,10 +100,14 @@ export class LmChatLiteLlm implements INodeType {
 						type: 'options',
 						options: [
 							{ name: 'High', value: 'high' },
+							{ name: 'Low', value: 'low' },
 							{ name: 'Max', value: 'max' },
+							{ name: 'Medium', value: 'medium' },
+							{ name: 'None', value: 'none' },
 						],
 						default: 'high',
-						displayOptions: { show: { reasoning: [true] } },
+						description:
+							'Sent as reasoning_effort to any model, not just DeepSeek (which takes High/Max). Set None for an OpenAI GPT-5 reasoning model, which otherwise refuses function tools in /chat/completions.',
 					},
 					{
 						displayName: 'Temperature',
@@ -139,13 +143,15 @@ export class LmChatLiteLlm implements INodeType {
 		const model = this.getNodeParameter('model', itemIndex) as string;
 		const options = this.getNodeParameter('options', itemIndex, {}) as IDataObject;
 
-		// DeepSeek-only params: sending these to a non-DeepSeek model would break the request.
+		// `thinking` is DeepSeek-only and would break other providers.
 		const useReasoning = options.reasoning === true && isDeepSeekModel(model);
 		const modelKwargs: IDataObject = {};
-		if (useReasoning) {
-			modelKwargs.thinking = { type: 'enabled' };
-			modelKwargs.reasoning_effort = (options.reasoningEffort as string) ?? 'high';
-		}
+		if (useReasoning) modelKwargs.thinking = { type: 'enabled' };
+
+		// reasoning_effort is not DeepSeek-specific: OpenAI's GPT-5 line applies one by
+		// default and then rejects function tools unless it is explicitly 'none'.
+		if (options.reasoningEffort) modelKwargs.reasoning_effort = options.reasoningEffort;
+		else if (useReasoning) modelKwargs.reasoning_effort = 'high';
 
 		const llm = new ChatLiteLlm({
 			openAIApiKey: credentials.apiKey as string,

@@ -338,10 +338,14 @@ export class LiteLlm implements INodeType {
 						type: 'options',
 						options: [
 							{ name: 'High', value: 'high' },
+							{ name: 'Low', value: 'low' },
 							{ name: 'Max', value: 'max' },
+							{ name: 'Medium', value: 'medium' },
+							{ name: 'None', value: 'none' },
 						],
 						default: 'high',
-						displayOptions: { show: { reasoning: [true] } },
+						description:
+							'Sent as reasoning_effort to any model, not just DeepSeek (which takes High/Max). Set None for an OpenAI GPT-5 reasoning model, which otherwise refuses function tools in /chat/completions.',
 					},
 					{
 						displayName: 'Response Format',
@@ -675,11 +679,14 @@ export class LiteLlm implements INodeType {
 				if (options.presencePenalty !== undefined)
 					body.presence_penalty = options.presencePenalty;
 
-				// DeepSeek-only params: sending these to a non-DeepSeek model would break the request.
+				// `thinking` is DeepSeek-only and would break other providers.
 				if (options.reasoning === true && isDeepSeekModel(model)) {
 					body.thinking = { type: 'enabled' };
-					body.reasoning_effort = (options.reasoningEffort as string) ?? 'high';
+					if (!options.reasoningEffort) body.reasoning_effort = 'high';
 				}
+				// reasoning_effort is not DeepSeek-specific: OpenAI's GPT-5 line applies one
+				// by default and then rejects function tools unless it is explicitly 'none'.
+				if (options.reasoningEffort) body.reasoning_effort = options.reasoningEffort;
 
 				if (options.responseFormat && options.responseFormat !== 'text') {
 					body.response_format = { type: options.responseFormat };
